@@ -1,0 +1,224 @@
+Program.Sub.ScreenSU.Start
+gui.Form1..create
+gui.Form1..caption("Form1")
+gui.Form1..size(11985,3915)
+gui.Form1..position(0,0)
+gui.Form1..alwaysontop(False)
+gui.Form1..fontname("Arial")
+gui.Form1..fontsize(8)
+gui.Form1..forecolor(0)
+gui.Form1..fontstyle(,,,,)
+gui.Form1..BackColor(-2147483633)
+gui.Form1..controlbox(True)
+gui.Form1..maxbutton(True)
+gui.Form1..minbutton(True)
+gui.Form1..mousepointer(0)
+gui.Form1..moveable(True)
+gui.Form1..sizeable(True)
+gui.Form1..ShowInTaskBar(True)
+gui.Form1..titlebar(True)
+gui.Form1.gsflexgrid1.create(gsflexgrid)
+gui.Form1.gsflexgrid1.FixedRows(0)
+gui.Form1.gsflexgrid1.FixedCols(0)
+gui.Form1.gsflexgrid1.visible(True)
+gui.Form1.gsflexgrid1.size(11310,1635)
+gui.Form1.gsflexgrid1.zorder(0)
+gui.Form1.gsflexgrid1.position(200,100)
+gui.Form1.gsflexgrid1.enabled(True)
+gui.Form1.on.create(button)
+gui.Form1.on.caption("Start")
+gui.Form1.on.visible(True)
+gui.Form1.on.size(2000,375)
+gui.Form1.on.zorder(0)
+gui.Form1.on.position(200,2000)
+gui.Form1.on.enabled(True)
+gui.Form1.on.fontname("Arial")
+gui.Form1.on.fontsize(8)
+gui.Form1.on.event(click,on_click)
+gui.Form1.off.create(button)
+gui.Form1.off.caption("Stop")
+gui.Form1.off.visible(True)
+gui.Form1.off.size(2000,375)
+gui.Form1.off.zorder(0)
+gui.Form1.off.position(2700,2000)
+gui.Form1.off.enabled(True)
+gui.Form1.off.fontname("Arial")
+gui.Form1.off.fontsize(8)
+gui.Form1.off.event(click,off_click)
+gui.Form1.quit.create(button)
+gui.Form1.quit.caption("Quit")
+gui.Form1.quit.visible(True)
+gui.Form1.quit.size(2000,375)
+gui.Form1.quit.zorder(0)
+gui.Form1.quit.position(5200,2015)
+gui.Form1.quit.enabled(True)
+gui.Form1.quit.fontname("Arial")
+gui.Form1.quit.fontsize(8)
+gui.Form1.quit.event(click,quit_click)
+gui.Form1.progress1.create(progressbar)
+gui.Form1.progress1.visible(True)
+gui.Form1.progress1.size(11415,255)
+gui.Form1.progress1.zorder(0)
+gui.Form1.progress1.position(200,2800)
+gui.Form1.progress1.enabled(True)
+
+
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+V.Global.path.Declare(String)
+V.Global.file.Declare(String)
+V.Global.filepath.Declare(String)
+V.Global.irows.Declare(Long,1)
+V.Global.stopped.Declare(Boolean,False)
+
+F.Intrinsic.Control.CallSub(Set_grid)
+Gui.Form1.off.Visible(FALSE)
+Gui.Form1..Show
+
+
+Program.Sub.Main.End
+
+program.sub.on_click.start
+Gui.Form1.on.Visible(FALSE)
+Gui.Form1.off.Visible(TRUE)
+
+V.Local.returnfile.Declare(Boolean)
+V.Local.beginning.Declare(Boolean,True)
+V.Local.link_id.Declare(String)
+V.Local.newrow.Declare(Long)
+V.Local.counter.Declare(Long,1)
+V.Local.pct.Declare(Float)
+V.Local.ttl.Declare(Long,0)
+V.Local.newcount.Declare(Long,1)
+V.Local.newfilepath.Declare(String)
+V.Local.company.Declare(String)
+
+F.Intrinsic.String.Concat("Global_",V.Caller.CompanyCode,V.Local.company)
+
+
+V.Global.stopped.Set(False)
+F.ODBC.Connection!conx.OpenConnection(V.Local.company,"","")
+
+
+F.Intrinsic.Control.Do
+
+'		F.Intrinsic.Math.sub(V.Global.irows,1,V.Local.newrow)
+		V.Local.newrow.Set(V.Global.irows)
+	F.Intrinsic.Control.If(V.Local.beginning,=,True)
+		F.Intrinsic.UI.InvokeWaitDialog("Starting At Beginning of Record Set")
+		V.Local.ttl.Set(0)
+		F.ODBC.Connection!conx.OpenRecordsetRO(" rstSel","Select path, file, link_id from atg_doc_assoc order by link_id")
+		F.Intrinsic.Control.Do
+			F.Intrinsic.Control.If(V.ODBC.conx!rstSel.EOF,=,True)
+				F.Intrinsic.Control.ExitDo
+			F.Intrinsic.Control.EndIf
+			F.Intrinsic.Math.Add(V.Local.ttl,1,V.Local.ttl)
+			F.ODBC.conx!rstSel.MoveNext
+		F.Intrinsic.Control.Loop
+		F.ODBC.conx!rstSel.Close
+		V.Global.irows.Set(1)
+'		F.Intrinsic.Math.sub(V.Global.irows,1,V.Local.newrow)
+		V.Local.newrow.Set(V.Global.irows)
+		V.Local.counter.set(0)
+		Gui.Form1.progress1.Value(0)
+		V.Local.pct.Set(0)
+		F.Intrinsic.Control.CallSub(Set_grid)
+		F.ODBC.Connection!conx.OpenRecordsetRO(" rstSel","Select path, file, link_id from atg_doc_assoc order by link_id")
+'		F.Intrinsic.Debug.InvokeDebugger
+'		F.Intrinsic.Debug.Stop
+'		Gui.Form1.progress1.Max(100)
+'		Gui.Form1.progress1.Min(1)
+		F.Intrinsic.UI.CloseWaitDialog
+	F.Intrinsic.Control.EndIf
+		
+	V.Local.beginning.Set(False)
+	F.Intrinsic.Math.Div(V.Local.counter,V.Local.ttl,V.Local.pct)
+	F.Intrinsic.Math.Mult(V.Local.pct,100,V.Local.pct)
+	Gui.Form1.progress1.Value(V.Local.pct)
+	F.Intrinsic.Math.Add(V.Local.counter,1,V.Local.counter)
+	V.Global.path.Set(V.ODBC.conx!rstSel.FieldValtrim!path)
+	V.Global.file.Set(V.ODBC.conx!rstSel.FieldValTrim!file)
+	F.Intrinsic.String.Concat(V.Global.path,V.Global.file,V.Global.filepath)
+	F.Intrinsic.File.Exists(V.Global.filepath,V.Local.returnfile)
+	V.Local.link_id.Set(V.ODBC.conx!rstSel.FieldValTrim!link_id)
+	F.Intrinsic.Control.If(V.Local.returnfile,=,False)
+		F.Intrinsic.Math.Add(1,V.Global.irows,V.Global.irows)
+		F.Intrinsic.Control.CallSub(Set_grid)
+		Gui.Form1.gsflexgrid1.TextMatrix(0,V.Local.newrow,V.Global.filepath)
+		Gui.Form1.gsflexgrid1.TextMatrix(1,V.Local.newrow,V.Local.link_id)
+'		F.Intrinsic.Math.Add(1,V.Global.irows,V.Global.irows)
+'		F.Intrinsic.Control.CallSub(Set_grid)
+		F.ODBC.conx!rstSel.MoveNext
+		F.Intrinsic.Control.If(V.ODBC.conx!rstSel.EOF,=,True)
+			V.Local.beginning.Set(True)
+			F.ODBC.conx!rstSel.Close
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.Else
+		F.ODBC.conx!rstSel.MoveNext
+		F.Intrinsic.Control.If(V.ODBC.conx!rstSel.EOF,=,True)
+			V.Local.beginning.Set(True)
+			V.Local.pct.Set(0)
+			F.ODBC.conx!rstSel.Close
+'			F.Intrinsic.Debug.InvokeDebugger
+'			F.Intrinsic.Debug.Stop
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+
+	F.Intrinsic.Control.If(V.Global.stopped,=,True)
+		F.ODBC.conx!rstSel.Close
+		F.ODBC.Connection!conx.Close
+		F.Intrinsic.Control.ExitDo
+		V.Local.counter.Set(1)
+	F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.Loop
+
+	
+
+
+
+
+
+	
+program.sub.on_click.end
+
+program.sub.off_click.start
+V.Global.stopped.Set(True)
+Gui.Form1.on.Visible(TRUE)
+Gui.Form1.off.Visible(FALSE)
+
+
+
+program.sub.off_click.end
+
+program.sub.quit_click.start
+F.Intrinsic.Control.CallSub(Off_click)
+F.Intrinsic.Control.End
+
+
+program.sub.quit_click.end
+
+Program.Sub.set_grid.Start
+Gui.Form1.gsflexgrid1.Rows(V.Global.irows)
+Gui.Form1.gsflexgrid1.fixedrows(1)
+Gui.Form1.gsflexgrid1.Cols(2)
+
+Gui.Form1.gsflexgrid1.TextMatrix(0,0,"Path")
+Gui.Form1.gsflexgrid1.BuildStyle(1,0,"type","locked",False)
+Gui.Form1.gsflexgrid1.SetColumnPercentages(".85:.15")
+
+Gui.Form1.gsflexgrid1.TextMatrix(1,0,"Link_id")
+Gui.Form1.gsflexgrid1.BuildStyle(1,1,"type","locked",False)
+
+
+Program.Sub.set_grid.End
+
+Program.Sub.Comments.Start
+${$0$}$bmp_auto_broken_link_checker$}$BP02$}$12/10/2013
+Program.Sub.Comments.End
+
